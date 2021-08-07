@@ -1,0 +1,220 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Forwarding setup</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+    <script src="https://vk.com/js/api/openapi.js?169" type="text/javascript"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+</head>
+
+<body>
+<div id="place-app"></div>
+<script type="text/babel">
+
+    let api_vk = "http://localhost:8010/proxy"
+
+    // let api_vk = "https://api.vk.com"
+    class FlavorForm extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+                delay: 0,
+                error: null,
+                isLoadedVk: false,
+                isLoadedTg: false,
+                confirmation: true,
+                access_token: new URLSearchParams(window.location.hash.substr(1)).get('access_token'),
+                creator_token: new URLSearchParams(window.location.hash.substr(1)).get('state'),
+                groups: [],
+                group: null,
+                channels: [],
+                channel: null
+            };
+            if (!this.state.access_token) {
+                window.location.replace("https://t.me/social_maintainer_bot");
+            }
+            this.handleChannelChange = this.handleChannelChange.bind(this);
+            this.handleGroupChange = this.handleGroupChange.bind(this);
+            this.handleDelayChange = this.handleDelayChange.bind(this);
+            this.handleSubmit = this.handleSubmit.bind(this);
+            this.disableConfirmation = this.disableConfirmation.bind(this);
+            this.enableConfirmation = this.enableConfirmation.bind(this);
+        }
+
+        componentDidMount() {
+            fetch(`${api_vk}/method/groups.get?extended=1&filter=moder&access_token=${this.state.access_token}&v=5.131`)
+                .then(res => res.json())
+                .then(
+                    (result) => {
+                        console.log(result.response);
+                        this.setState({
+                            isLoadedVk: true,
+                            groups: result.response.items,
+                            group: parseInt(result.response.items[0]['id'])
+                        });
+                    },
+                    (error) => {
+                        this.setState({
+                            isLoadedVk: true,
+                            error
+                        });
+                    }
+                )
+            fetch(`/api/channels?creator_token=${this.state.creator_token}`)
+                .then(res => res.json())
+                .then(
+                    (result) => {
+                        console.log(result);
+                        this.setState({
+                            isLoadedTg: true,
+                            channels: result.channels,
+                            channel: parseInt(Object.keys(result.channels)[0])
+                        });
+                    },
+                    (error) => {
+                        this.setState({
+                            isLoadedTg: true,
+                            error
+                        });
+                    }
+                )
+        }
+
+        handleSubmit(event) {
+            event.preventDefault();
+            let body = {
+                channel: this.state.channel,
+                group: this.state.group,
+                delay: this.state.delay,
+                confirmation: this.state.confirmation,
+                vk_access_token: this.state.access_token,
+                creator_token: this.state.creator_token
+            }
+            console.log(body)
+            fetch('/api/match', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(
+                    body
+                )
+            })
+                .then(function (response) {
+                    // window.location.replace("https://t.me/social_maintainer_bot");
+                })
+        }
+
+        handleChannelChange(event) {
+            this.setState({channel: parseInt(event.target.value)});
+        }
+
+        handleGroupChange(event) {
+            this.setState({group: parseInt(event.target.value)});
+        }
+
+        handleDelayChange(event) {
+            this.setState({delay: parseInt(event.target.value)});
+        }
+
+        disableConfirmation(event) {
+            this.setState({confirmation: false})
+        }
+
+        enableConfirmation(event) {
+            this.setState({confirmation: true})
+        }
+
+        render() {
+            return (
+                <div className="card">
+                    <div className="card-content">
+                        <form onSubmit={this.handleSubmit}>
+                            <div className="field">
+                                <label className="label">Telegram Channel</label>
+                                <div className="select">
+                                    <select value={this.state.channel} onChange={this.handleChannelChange}>
+                                        {Object.keys(this.state.channels).map(id => <option
+                                            value={id}>{this.state.channels[id]}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="field">
+                                <label className="label">VK Group</label>
+                                <div className="select">
+                                    <select value={this.state.group} onChange={this.handleGroupChange}>
+                                        {this.state.groups.map(group => <option
+                                            value={group['id']}>{group['name']}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                            <label className="label">Delay
+                            </label>
+                            <div className="field">
+                                <div className="select">
+                                    <select value={this.state.delay} onChange={this.handleDelayChange}>
+                                        <option value="0">Instantly</option>
+                                        <option value="60">1 minute</option>
+                                        <option value="300">5 minutes</option>
+                                        <option value="3600">1 hour</option>
+                                        <option value="86400">1 day</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="field">
+                                <div className="control">
+                                    <label className="label">
+                                        Ask for confirmation?
+                                    </label>
+                                    <label className="radio">
+                                        <input type="radio" name="question" checked={!this.state.confirmation}
+                                               onChange={this.disableConfirmation}/>
+                                        No
+                                    </label>
+                                    <label className="radio">
+                                        <input type="radio" name="question" checked={this.state.confirmation}
+                                               onChange={this.enableConfirmation}/>
+                                        Yes
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="control">
+                                <button className="button is-link">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+    }
+
+    let App = (props) => {
+        return (
+            <FlavorForm/>
+        );
+    };
+
+    ReactDOM.render(
+        App(),
+        document.getElementById('place-app')
+    );
+
+
+</script>
+</body>
+</html>
+<style>
+    .card {
+        margin: 20px;
+        background-color: lightblue;
+    }
+
+    select {
+        width: 250px;
+    }
+
+</style>

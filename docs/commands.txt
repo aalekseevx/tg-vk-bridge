@@ -1,0 +1,6 @@
+setup - Setup new bridge connection
+pause - Pause cross-posting
+resume - Continue cross-posting
+list - Get a list of bridges and channels
+help - Show usage hints
+about - Read about the bot

@@ -1,0 +1,6 @@
+tmp
+!tmp/.keep
+*.db
+.idea
+.vscode
+.DS_Store

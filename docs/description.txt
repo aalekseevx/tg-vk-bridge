@@ -1,0 +1,1 @@
+This bot can help you to forward posts from your Telegram channels to VK groups with ease. Setup lasts for half a minute. Maintained by @alekseev_wall.
